@@ -1,0 +1,64 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Enums\ApiResponseMessage;
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+
+class ProfileController extends Controller
+{
+    public function show(\Illuminate\Http\Request $request): JsonResponse
+    {
+        return $this->successResponse($this->formatUser($request->user()));
+    }
+
+    public function update(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $data = $request->safe()->except('profile_picture');
+
+        if ($request->hasFile('profile_picture')) {
+            if ($user->profile_picture) {
+                Storage::disk('public')->delete($user->profile_picture);
+            }
+            $data['profile_picture'] = $request->file('profile_picture')->store('avatars', 'public');
+        }
+
+        $user->update($data);
+
+        return $this->successResponse($this->formatUser($user), ApiResponseMessage::ProfileUpdateSuccess->value);
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! Hash::check($request->validated('current_password'), $user->password)) {
+            return $this->errorResponse(ApiResponseMessage::InvalidCurrentPassword->value, 422);
+        }
+
+        $user->update(['password' => Hash::make($request->validated('password'))]);
+
+        return $this->successResponse(message: ApiResponseMessage::PasswordUpdateSuccess->value);
+    }
+
+    private function formatUser($user): array
+    {
+        return [
+            'id'                   => $user->id,
+            'name'                 => $user->name,
+            'mobile'               => $user->mobile,
+            'email'                => $user->email,
+            'currency'             => $user->currency ?? 'INR',
+            'role'                 => $user->role?->value ?? 'user',
+            'profile_picture'      => $user->profile_picture
+                ? Storage::disk('public')->url($user->profile_picture)
+                : null,
+            'onboarding_completed' => (bool) $user->onboarding_completed,
+        ];
+    }
+}
