@@ -113,7 +113,7 @@ class NotificationService
 
     protected function renderTemplate(string $view, array $data = []): string
     {
-        $data['appName'] = config('app.name', 'Finance Tracker');
+        $data['appName'] = config('app.name', 'Cashlytics');
         $data['year']    = date('Y');
 
         return view($view, $data)->render();

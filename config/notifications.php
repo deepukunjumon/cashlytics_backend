@@ -21,7 +21,7 @@ return [
         'email' => [
             'provider'      => env('EMAIL_PROVIDER', 'resend'),
             'from_address'  => env('MAIL_FROM_ADDRESS', 'no-reply@yourdomain.com'),
-            'from_name'     => env('MAIL_FROM_NAME', 'Finance Tracker'),
+            'from_name'     => env('MAIL_FROM_NAME', 'Cashlytics'),
         ],
 
         'sms' => [
