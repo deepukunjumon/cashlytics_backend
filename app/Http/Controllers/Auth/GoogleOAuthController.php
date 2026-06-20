@@ -41,6 +41,8 @@ class GoogleOAuthController extends Controller
             ]);
         }
 
+        $user->update(['last_login_at' => now()]);
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         $query = http_build_query([

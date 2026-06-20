@@ -25,6 +25,7 @@ class Transaction extends Model
         'amount',
         'note',
         'date',
+        'time',
         'tags',
     ];
 

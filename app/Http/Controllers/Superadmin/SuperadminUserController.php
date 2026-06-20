@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SuperadminUserController extends Controller
 {
@@ -16,6 +17,8 @@ class SuperadminUserController extends Controller
             ->withCount('accounts')
             ->latest()
             ->paginate(20);
+
+        $users->getCollection()->transform(fn (User $u) => $this->formatUser($u));
 
         return $this->successResponse($users);
     }
@@ -69,6 +72,24 @@ class SuperadminUserController extends Controller
         $user->delete();
 
         return $this->successResponse(message: ApiResponseMessage::DeleteSuccess->value);
+    }
+
+    private function formatUser(User $user): array
+    {
+        return [
+            'id'              => $user->id,
+            'name'            => $user->name,
+            'email'           => $user->email,
+            'role'            => $user->role?->value ?? 'user',
+            'currency'        => $user->currency ?? 'INR',
+            'profile_picture' => $user->profile_picture
+                ? Storage::disk('public')->url($user->profile_picture)
+                : null,
+            'accounts_count'  => $user->accounts_count,
+            'last_login_at'   => $user->last_login_at,
+            'created_at'      => $user->created_at,
+            'deleted_at'      => $user->deleted_at,
+        ];
     }
 
     public function restore(string $id): JsonResponse

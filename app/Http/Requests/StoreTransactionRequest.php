@@ -22,6 +22,7 @@ class StoreTransactionRequest extends FormRequest
             'type'                => ['required', new Enum(TransactionType::class)],
             'amount'              => ['required', 'numeric', 'min:0.01'],
             'date'                => ['required', 'date'],
+            'time'                => ['nullable', 'date_format:H:i'],
             'note'                => ['nullable', 'string', 'max:1000'],
             'tags'                => ['nullable', 'array'],
             'tags.*'              => ['string', 'max:50'],

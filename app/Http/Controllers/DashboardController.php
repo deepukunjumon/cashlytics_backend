@@ -53,6 +53,16 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        $allByCategory = Transaction::forUser($userId)
+            ->with('category')
+            ->selectRaw('category_id, type, SUM(amount) as total')
+            ->inMonth($month)
+            ->whereNotNull('category_id')
+            ->whereIn('type', ['income', 'expense'])
+            ->groupBy('category_id', 'type')
+            ->orderByDesc('total')
+            ->get();
+
         return $this->successResponse([
             'total_balance'        => (float) $totalBalance,
             'monthly_income'       => (float) $income,
@@ -61,6 +71,7 @@ class DashboardController extends Controller
             'recent_transactions'  => $recentTransactions,
             'monthly_trend'        => $monthlyTrend,
             'expense_by_category'  => $expenseByCategory,
+            'all_by_category'      => $allByCategory,
         ]);
     }
 }
