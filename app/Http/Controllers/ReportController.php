@@ -7,6 +7,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
@@ -75,7 +76,7 @@ class ReportController extends Controller
         return $pdf->download("report_{$startDate}_{$endDate}.pdf");
     }
 
-    public function exportCsv(Request $request): Response
+    public function exportCsv(Request $request): StreamedResponse
     {
         $userId    = $request->user()->id;
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
@@ -94,11 +95,12 @@ class ReportController extends Controller
 
         $callback = function () use ($transactions) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Date', 'Type', 'Category', 'Account', 'Amount', 'Note']);
+            fputcsv($handle, ['Date', 'Time', 'Type', 'Category', 'Account', 'Amount', 'Note']);
             foreach ($transactions as $t) {
                 fputcsv($handle, [
-                    $t->date->toDateString(),
-                    $t->type?->value,
+                    $t->date?->toDateString() ?? '',
+                    $t->time ?? '',
+                    $t->type?->value ?? '',
                     $t->category?->name ?? '',
                     $t->account?->name ?? '',
                     $t->amount,
