@@ -14,6 +14,10 @@ class DashboardController extends Controller
         $userId = $request->user()->id;
         $month  = $request->query('month', now()->format('Y-m'));
 
+        $sections = $request->filled('sections')
+            ? array_map('trim', explode(',', $request->query('sections')))
+            : ['accounts', 'recent_transactions', 'monthly_trend', 'expense_by_category', 'all_by_category'];
+
         $accounts     = Account::forUser($userId)->where('is_archived', false)->get();
         $totalBalance = $accounts->sum('balance');
 
@@ -27,51 +31,60 @@ class DashboardController extends Controller
             ->inMonth($month)
             ->sum('amount');
 
-        $recentTransactions = Transaction::forUser($userId)
-            ->with(['account', 'category'])
-            ->orderBy('date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+        $data = [
+            'total_balance'   => (float) $totalBalance,
+            'monthly_income'  => (float) $income,
+            'monthly_expense' => (float) $expense,
+        ];
 
-        $monthlyTrend = Transaction::forUser($userId)
-            ->selectRaw('DATE_FORMAT(date, "%Y-%m") as month, type, SUM(amount) as total')
-            ->whereIn('type', ['income', 'expense'])
-            ->where('date', '>=', now()->subMonths(5)->startOfMonth())
-            ->groupBy('month', 'type')
-            ->orderBy('month')
-            ->get();
+        if (in_array('accounts', $sections)) {
+            $data['accounts'] = $accounts;
+        }
 
-        $expenseByCategory = Transaction::forUser($userId)
-            ->with('category')
-            ->selectRaw('category_id, SUM(amount) as total')
-            ->where('type', 'expense')
-            ->inMonth($month)
-            ->whereNotNull('category_id')
-            ->groupBy('category_id')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
+        if (in_array('recent_transactions', $sections)) {
+            $data['recent_transactions'] = Transaction::forUser($userId)
+                ->with(['account', 'category'])
+                ->orderBy('date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+        }
 
-        $allByCategory = Transaction::forUser($userId)
-            ->with('category')
-            ->selectRaw('category_id, type, SUM(amount) as total')
-            ->inMonth($month)
-            ->whereNotNull('category_id')
-            ->whereIn('type', ['income', 'expense'])
-            ->groupBy('category_id', 'type')
-            ->orderByDesc('total')
-            ->get();
+        if (in_array('monthly_trend', $sections)) {
+            $data['monthly_trend'] = Transaction::forUser($userId)
+                ->selectRaw('DATE_FORMAT(date, "%Y-%m") as month, type, SUM(amount) as total')
+                ->whereIn('type', ['income', 'expense'])
+                ->where('date', '>=', now()->subMonths(5)->startOfMonth())
+                ->groupBy('month', 'type')
+                ->orderBy('month')
+                ->get();
+        }
 
-        return $this->successResponse([
-            'total_balance'        => (float) $totalBalance,
-            'monthly_income'       => (float) $income,
-            'monthly_expense'      => (float) $expense,
-            'accounts'             => $accounts,
-            'recent_transactions'  => $recentTransactions,
-            'monthly_trend'        => $monthlyTrend,
-            'expense_by_category'  => $expenseByCategory,
-            'all_by_category'      => $allByCategory,
-        ]);
+        if (in_array('expense_by_category', $sections)) {
+            $data['expense_by_category'] = Transaction::forUser($userId)
+                ->with('category')
+                ->selectRaw('category_id, SUM(amount) as total')
+                ->where('type', 'expense')
+                ->inMonth($month)
+                ->whereNotNull('category_id')
+                ->groupBy('category_id')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get();
+        }
+
+        if (in_array('all_by_category', $sections)) {
+            $data['all_by_category'] = Transaction::forUser($userId)
+                ->with('category')
+                ->selectRaw('category_id, type, SUM(amount) as total')
+                ->inMonth($month)
+                ->whereNotNull('category_id')
+                ->whereIn('type', ['income', 'expense'])
+                ->groupBy('category_id', 'type')
+                ->orderByDesc('total')
+                ->get();
+        }
+
+        return $this->successResponse($data);
     }
 }
