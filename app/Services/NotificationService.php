@@ -69,6 +69,10 @@ class NotificationService
 
     public function sendTransactionAlert(User $user, float $amount, string $type, string $accountName): bool
     {
+        if (! $user->wantsNotification('email') || ! $user->wantsNotification('transaction_alerts')) {
+            return false;
+        }
+
         $html = $this->renderTemplate('emails.transaction-alert', [
             'userName'    => $user->name,
             'amount'      => number_format($amount, 2),
@@ -85,6 +89,10 @@ class NotificationService
 
     public function sendBudgetExceeded(User $user, string $categoryName, float $budgetAmount, float $spent): bool
     {
+        if (! $user->wantsNotification('email') || ! $user->wantsNotification('budget_alerts')) {
+            return false;
+        }
+
         $html = $this->renderTemplate('emails.budget-exceeded', [
             'userName'     => $user->name,
             'categoryName' => $categoryName,

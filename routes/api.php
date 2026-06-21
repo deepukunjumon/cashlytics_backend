@@ -52,6 +52,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile',           [ProfileController::class, 'show']);
     Route::post('/profile',          [ProfileController::class, 'update']);
     Route::put('/profile/password',  [ProfileController::class, 'updatePassword']);
+    Route::get('/profile/notification-preferences',  [ProfileController::class, 'getNotificationPreferences']);
+    Route::put('/profile/notification-preferences',  [ProfileController::class, 'updateNotificationPreferences']);
     Route::delete('/profile',        [ProfileController::class, 'deactivate']);
 
     // Dashboard

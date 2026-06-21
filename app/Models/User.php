@@ -29,6 +29,7 @@ class User extends Authenticatable
         'profile_picture',
         'currency',
         'onboarding_completed',
+        'notification_preferences',
     ];
 
     /**
@@ -49,8 +50,22 @@ class User extends Authenticatable
             'password'             => 'hashed',
             'is_admin'             => 'boolean',
             'role'                 => UserRole::class,
-            'onboarding_completed' => 'boolean',
+            'onboarding_completed'      => 'boolean',
+            'notification_preferences'  => 'array',
         ];
+    }
+
+    public function wantsNotification(string $key): bool
+    {
+        $defaults = [
+            'email' => true, 'sms' => false, 'push' => true,
+            'budget_alerts' => true, 'transaction_alerts' => true,
+            'weekly_summary' => false, 'bill_reminders' => true,
+        ];
+
+        $prefs = $this->notification_preferences ?? $defaults;
+
+        return (bool) ($prefs[$key] ?? ($defaults[$key] ?? true));
     }
 
     /**

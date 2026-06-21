@@ -50,6 +50,27 @@ class ProfileController extends Controller
         return $this->successResponse(message: ApiResponseMessage::PasswordUpdateSuccess->value);
     }
 
+    public function getNotificationPreferences(Request $request): JsonResponse
+    {
+        $defaults = [
+            'email' => true, 'sms' => false, 'push' => true,
+            'budget_alerts' => true, 'transaction_alerts' => true,
+            'weekly_summary' => false, 'bill_reminders' => true,
+        ];
+
+        return $this->successResponse(
+            $request->user()->notification_preferences ?? $defaults
+        );
+    }
+
+    public function updateNotificationPreferences(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->update(['notification_preferences' => $request->all()]);
+
+        return $this->successResponse($user->notification_preferences, 'Notification preferences updated.');
+    }
+
     public function deactivate(Request $request): JsonResponse
     {
         $user = $request->user();
