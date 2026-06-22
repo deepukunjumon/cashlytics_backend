@@ -169,13 +169,31 @@ class TransactionController extends Controller
 
     public function update(UpdateTransactionRequest $request, string $id): JsonResponse
     {
-        $transaction = Transaction::forUser($request->user()->id)->find($id);
+        $userId = $request->user()->id;
+        $transaction = Transaction::forUser($userId)->find($id);
 
         if (! $transaction) {
             return $this->errorResponse(ApiResponseMessage::TransactionNotFound->value, 404);
         }
 
-        $transaction->update($request->validated());
+        $data = $request->validated();
+
+        if (isset($data['transfer_account_id'])) {
+            $transferAccount = Account::forUser($userId)->find($data['transfer_account_id']);
+            if (! $transferAccount) {
+                return $this->errorResponse('Transfer account not found or does not belong to you.', 404);
+            }
+        }
+
+        DB::transaction(function () use ($transaction, $data, $userId) {
+            $this->reverseBalances($transaction);
+
+            $transaction->update($data);
+            $transaction->refresh();
+
+            $this->applyBalances($transaction, $userId);
+        });
+
         $transaction->load(['account', 'category', 'transferAccount']);
 
         return $this->successResponse($transaction, ApiResponseMessage::UpdateSuccess->value);
@@ -189,9 +207,42 @@ class TransactionController extends Controller
             return $this->errorResponse(ApiResponseMessage::TransactionNotFound->value, 404);
         }
 
-        $transaction->delete();
+        DB::transaction(function () use ($transaction) {
+            $this->reverseBalances($transaction);
+            $transaction->delete();
+        });
 
         return $this->successResponse(message: ApiResponseMessage::DeleteSuccess->value);
+    }
+
+    private function reverseBalances(Transaction $transaction): void
+    {
+        $type   = $transaction->type;
+        $amount = (float) $transaction->amount;
+
+        if ($type === TransactionType::Income) {
+            Account::where('id', $transaction->account_id)->decrement('balance', $amount);
+        } elseif ($type === TransactionType::Expense) {
+            Account::where('id', $transaction->account_id)->increment('balance', $amount);
+        } elseif ($type === TransactionType::Transfer && $transaction->transfer_account_id) {
+            Account::where('id', $transaction->account_id)->increment('balance', $amount);
+            Account::where('id', $transaction->transfer_account_id)->decrement('balance', $amount);
+        }
+    }
+
+    private function applyBalances(Transaction $transaction, string $userId): void
+    {
+        $type   = $transaction->type;
+        $amount = (float) $transaction->amount;
+
+        if ($type === TransactionType::Income) {
+            Account::where('id', $transaction->account_id)->increment('balance', $amount);
+        } elseif ($type === TransactionType::Expense) {
+            Account::where('id', $transaction->account_id)->decrement('balance', $amount);
+        } elseif ($type === TransactionType::Transfer && $transaction->transfer_account_id) {
+            Account::where('id', $transaction->account_id)->decrement('balance', $amount);
+            Account::forUser($userId)->where('id', $transaction->transfer_account_id)->increment('balance', $amount);
+        }
     }
 
     private function sendTransactionNotifications($user, array $data, Account $account): void
