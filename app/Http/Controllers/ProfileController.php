@@ -24,10 +24,12 @@ class ProfileController extends Controller
         $data = $request->safe()->except('profile_picture');
 
         if ($request->hasFile('profile_picture')) {
+            $disk = config('filesystems.default');
             if ($user->profile_picture) {
-                Storage::disk('public')->delete($user->profile_picture);
+                Storage::disk($disk)->delete($user->profile_picture);
             }
-            $data['profile_picture'] = $request->file('profile_picture')->store('avatars', 'public');
+            $path = "profile-pictures/{$user->id}";
+            $data['profile_picture'] = $request->file('profile_picture')->store($path, $disk);
         }
 
         $user->update($data);
@@ -104,10 +106,21 @@ class ProfileController extends Controller
             'email'                => $user->email,
             'currency'             => $user->currency ?? 'INR',
             'role'                 => $user->role?->value ?? 'user',
-            'profile_picture'      => $user->profile_picture
-                ? Storage::disk('public')->url($user->profile_picture)
-                : null,
+            'profile_picture'      => $this->fileUrl($user->profile_picture),
             'onboarding_completed' => (bool) $user->onboarding_completed,
         ];
+    }
+
+    private function fileUrl(?string $path): ?string
+    {
+        if (! $path) return null;
+
+        $disk = Storage::disk(config('filesystems.default'));
+
+        if (config('filesystems.default') === 's3') {
+            return $disk->temporaryUrl($path, now()->addDay());
+        }
+
+        return $disk->url($path);
     }
 }

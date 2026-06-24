@@ -103,14 +103,25 @@ class SuperadminUserController extends Controller
             'email'           => $user->email,
             'role'            => $user->role?->value ?? 'user',
             'currency'        => $user->currency ?? 'INR',
-            'profile_picture' => $user->profile_picture
-                ? Storage::disk('public')->url($user->profile_picture)
-                : null,
+            'profile_picture' => $this->fileUrl($user->profile_picture),
             'accounts_count'  => $user->accounts_count,
             'last_login_at'   => $user->last_login_at,
             'created_at'      => $user->created_at,
             'deleted_at'      => $user->deleted_at,
         ];
+    }
+
+    private function fileUrl(?string $path): ?string
+    {
+        if (! $path) return null;
+
+        $disk = Storage::disk(config('filesystems.default'));
+
+        if (config('filesystems.default') === 's3') {
+            return $disk->temporaryUrl($path, now()->addDay());
+        }
+
+        return $disk->url($path);
     }
 
     public function restore(Request $request, string $id): JsonResponse
