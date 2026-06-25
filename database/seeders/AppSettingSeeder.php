@@ -15,7 +15,7 @@ class AppSettingSeeder extends Seeder
         $settings = [
             // General — public
             ['key' => 'app_version',      'value' => '1.0.0',                    'type' => 'string',  'group' => 'general', 'is_public' => true],
-            ['key' => 'footer_text',      'value' => '© 2025 Cashlytics. All rights reserved.', 'type' => 'string', 'group' => 'general', 'is_public' => true],
+            ['key' => 'footer_text',      'value' => '© ' . date('Y') .' Cashlytics. All rights reserved.', 'type' => 'string', 'group' => 'general', 'is_public' => true],
             ['key' => 'app_name',         'value' => 'Cashlytics',           'type' => 'string',  'group' => 'general', 'is_public' => true],
 
             // SSO — partially public
