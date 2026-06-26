@@ -23,6 +23,7 @@ class Account extends Model
         'name',
         'type',
         'balance',
+        'initial_balance',
         'is_archived',
         'is_primary',
         'notes',
