@@ -43,6 +43,13 @@ return [
             'api_url' => env('RESEND_API_URL'),
         ],
 
+        'gmail' => [
+            'client_id'     => env('GOOGLE_CLIENT_ID'),
+            'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+            'refresh_token' => env('GOOGLE_REFRESH_TOKEN'),
+            'from_address'  => env('MAIL_FROM_ADDRESS'),
+        ],
+
     ],
 
     /*
