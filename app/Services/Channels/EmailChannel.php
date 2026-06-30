@@ -11,6 +11,12 @@ class EmailChannel implements NotificationChannel
 {
     public function send(string $to, string $subject, string $body, array $options = []): bool
     {
+        $provider = config('notifications.channels.email.provider', 'resend');
+
+        if ($provider === 'gmail') {
+            return (new GmailChannel())->send($to, $subject, $body, $options);
+        }
+
         $apiKey   = config('notifications.providers.resend.api_key');
         $apiUrl   = config('notifications.providers.resend.api_url');
         $fromAddr = config('notifications.channels.email.from_address');
