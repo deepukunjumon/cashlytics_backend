@@ -7,6 +7,7 @@ use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Socialite\Facades\Socialite;
 
 class SsoController extends Controller
@@ -66,8 +67,22 @@ class SsoController extends Controller
             'currency'             => $user->currency ?? 'INR',
             'onboarding_completed' => $user->onboarding_completed ? '1' : '0',
             'role'                 => $user->role?->value ?? 'user',
+            'profile_picture'      => $this->fileUrl($user->profile_picture),
         ]);
 
         return redirect($frontendUrl . '/auth/sso/callback#' . $fragment);
+    }
+
+    private function fileUrl(?string $path): ?string
+    {
+        if (! $path) return null;
+
+        $disk = Storage::disk(config('filesystems.default'));
+
+        if (config('filesystems.default') === 's3') {
+            return $disk->temporaryUrl($path, now()->addDay());
+        }
+
+        return $disk->url($path);
     }
 }
