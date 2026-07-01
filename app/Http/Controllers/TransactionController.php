@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateTransactionRequest;
 use App\Models\Account;
 use App\Models\Budget;
 use App\Models\Transaction;
+use App\Notifications\LargeExpenseAdded;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -149,7 +150,7 @@ class TransactionController extends Controller
             ->latest()
             ->first();
 
-        $this->sendTransactionNotifications($request->user(), $data, $account);
+        $this->sendTransactionNotifications($request->user(), $data, $account, $transaction);
 
         return $this->successResponse($transaction, ApiResponseMessage::CreateSuccess->value, 201);
     }
@@ -245,7 +246,7 @@ class TransactionController extends Controller
         }
     }
 
-    private function sendTransactionNotifications($user, array $data, Account $account): void
+    private function sendTransactionNotifications($user, array $data, Account $account, ?Transaction $transaction = null): void
     {
         $notifier = app(NotificationService::class);
         $amount   = (float) $data['amount'];
@@ -253,6 +254,10 @@ class TransactionController extends Controller
         $threshold = (float) config('notifications.large_transaction_threshold', 10000);
         if ($amount >= $threshold) {
             $notifier->sendTransactionAlert($user, $amount, $data['type'], $account->name);
+        }
+
+        if ($data['type'] === 'expense' && $transaction && $amount >= LargeExpenseAdded::LARGE_EXPENSE_THRESHOLD) {
+            $user->notify(new LargeExpenseAdded($transaction));
         }
 
         if ($data['type'] === 'expense' && ! empty($data['category_id'])) {

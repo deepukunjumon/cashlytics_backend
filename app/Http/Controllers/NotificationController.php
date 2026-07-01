@@ -39,4 +39,43 @@ class NotificationController extends Controller
 
         return $this->successResponse(message: ApiResponseMessage::DeleteSuccess->value);
     }
+
+    // ──────────────────────────────────────────────────────
+    //  Native Laravel Notifications (notifiable relationship) — used by
+    //  notify()-driven notifications like LargeExpenseAdded, which live in the
+    //  same table as the legacy rows above but are queried via notifiable_id
+    //  instead of user_id.
+    // ──────────────────────────────────────────────────────
+
+    public function realtimeIndex(Request $request): JsonResponse
+    {
+        $notifications = $request->user()->notifications()->paginate(20);
+
+        return $this->successResponse($notifications);
+    }
+
+    public function unreadCount(Request $request): JsonResponse
+    {
+        return $this->successResponse(['count' => $request->user()->unreadNotifications()->count()]);
+    }
+
+    public function markOneRead(Request $request, string $id): JsonResponse
+    {
+        $notification = $request->user()->notifications()->find($id);
+
+        if (! $notification) {
+            return $this->errorResponse(ApiResponseMessage::NotFound->value, 404);
+        }
+
+        $notification->markAsRead();
+
+        return $this->successResponse($notification, ApiResponseMessage::NotificationMarkRead->value);
+    }
+
+    public function markAllRead(Request $request): JsonResponse
+    {
+        $request->user()->unreadNotifications->markAsRead();
+
+        return $this->successResponse(message: ApiResponseMessage::NotificationMarkRead->value);
+    }
 }

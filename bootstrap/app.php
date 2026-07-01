@@ -11,6 +11,13 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    // The default channels: param registers /broadcasting/auth under the 'web'
+    // (session) middleware, which can't authenticate our Bearer-token SPA — it
+    // needs auth:sanctum instead.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['middleware' => ['auth:sanctum']],
+    )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'admin'      => \App\Http\Middleware\AdminMiddleware::class,
