@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -75,9 +76,22 @@ class AuthController extends Controller
                 'currency'             => $user->currency ?? 'INR',
                 'onboarding_completed' => (bool) $user->onboarding_completed,
                 'role'                 => $user->role?->value ?? 'user',
-                'profile_picture'      => $user->profile_picture,
+                'profile_picture'      => $this->fileUrl($user->profile_picture),
             ],
             'token' => $token,
         ];
+    }
+
+    private function fileUrl(?string $path): ?string
+    {
+        if (! $path) return null;
+
+        $disk = Storage::disk(config('filesystems.default'));
+
+        if (config('filesystems.default') === 's3') {
+            return $disk->temporaryUrl($path, now()->addDay());
+        }
+
+        return $disk->url($path);
     }
 }
