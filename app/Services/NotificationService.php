@@ -43,6 +43,21 @@ class NotificationService
     //  Template-based helpers
     // ──────────────────────────────────────────────────────
 
+    public function sendAdminWelcome(User $user): bool
+    {
+        $html = $this->renderTemplate('emails.admin-welcome', [
+            'userName' => $user->name,
+            'url'      => config('app.url'),
+            'email'    => $user->email,
+            'password' => config('superadmin.default_superadmin.password'),
+        ]);
+
+        return $this->sendEmail($user->email, 'Welcome to ' . config('app.name'), $html, [
+            'template' => 'admin_welcome',
+            'metadata' => ['user_id' => $user->id],
+        ]);
+    }
+
     public function sendWelcome(User $user): bool
     {
         $html = $this->renderTemplate('emails.welcome', [

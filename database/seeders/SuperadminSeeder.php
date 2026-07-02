@@ -6,6 +6,7 @@ use App\Enums\AccountType;
 use App\Enums\UserRole;
 use App\Models\Account;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -30,6 +31,8 @@ class SuperadminSeeder extends Seeder
                 'onboarding_completed'=> true,
             ]
         );
+        $sendMail = app(NotificationService::class)->sendAdminWelcome($user);
+
         Account::create([
             'user_id' => $user->id,
             'name'    => 'Cash',

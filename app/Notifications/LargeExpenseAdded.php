@@ -52,4 +52,17 @@ class LargeExpenseAdded extends Notification implements ShouldQueue
     {
         return new BroadcastMessage($this->toDatabase($notifiable));
     }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'id'              => $this->id,
+            'type'            => static::class,
+            'notifiable_type' => get_class($this->transaction->user),
+            'notifiable_id'   => $this->transaction->user_id,
+            'data'            => $this->toDatabase($this->transaction->user),
+            'read_at'         => null,
+            'created_at'      => now()->toJSON(),
+        ];
+    }
 }

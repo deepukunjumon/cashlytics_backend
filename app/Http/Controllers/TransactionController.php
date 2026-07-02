@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateTransactionRequest;
 use App\Models\Account;
 use App\Models\Budget;
 use App\Models\Transaction;
+use App\Notifications\BudgetExceeded;
 use App\Notifications\LargeExpenseAdded;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
@@ -279,9 +280,9 @@ class TransactionController extends Controller
                     ->sum('amount');
 
                 if ((float) $spent > (float) $budget->amount) {
-                    $categoryName = $budget->category?->name ?? 'Unknown';
                     $budget->loadMissing('category');
                     $notifier->sendBudgetExceeded($user, $budget->category?->name ?? 'Unknown', (float) $budget->amount, (float) $spent);
+                    $user->notify(new BudgetExceeded($budget, (float) $spent));
                 }
             }
         }
