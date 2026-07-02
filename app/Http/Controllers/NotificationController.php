@@ -78,4 +78,11 @@ class NotificationController extends Controller
 
         return $this->successResponse(message: ApiResponseMessage::NotificationMarkRead->value);
     }
+
+    public function clearAll(Request $request): JsonResponse
+    {
+        $request->user()->notifications()->delete();
+
+        return $this->successResponse(message: ApiResponseMessage::DeleteSuccess->value);
+    }
 }

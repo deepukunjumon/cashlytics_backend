@@ -105,6 +105,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/realtime-notifications/unread-count',    [NotificationController::class, 'unreadCount']);
     Route::post('/realtime-notifications/read-all',       [NotificationController::class, 'markAllRead']);
     Route::post('/realtime-notifications/{id}/read',      [NotificationController::class, 'markOneRead']);
+    Route::delete('/realtime-notifications',               [NotificationController::class, 'clearAll']);
 
     // Reports
     Route::get('/reports/summary',     [ReportController::class, 'summary']);
